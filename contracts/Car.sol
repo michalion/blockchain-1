@@ -1,30 +1,56 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// This is the main building block for smart contracts.
-contract Car {
-    address public manufacturer;
-    mapping(uint256 => address) public owners;
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 
-    mapping(uint256 => address) public buyers;
+contract Car is ERC721URIStorage {
+    using Counters for Counters.Counter;
+    Counters.Counter private carIDs;
 
-    constructor() {
-        manufacturer = msg.sender;
+    constructor() ERC721("Car Brand", "Car") {}
+
+    function mint(string memory _tokenURI) public returns (uint256) {
+        carIDs.increment();
+
+        uint256 newCarID = carIDs.current();
+        _mint(msg.sender, newCarID);
+        _setTokenURI(newCarID, _tokenURI);
+
+        return newCarID;
     }
 
-    function transfer(uint256 car, address newOwner) public {
-        address currentOwner = owners[car];
+    // is this needed?
+    function totalSupply() public view returns (uint256) {
+        return carIDs.current();
+    }
+}
 
-        if (currentOwner == address(0)) {
-            currentOwner = manufacturer;
+// thank you openzeppelin for removal in v5
+library Counters {
+    struct Counter {
+        uint256 _value; // default: 0
+    }
+
+    function current(Counter storage counter) internal view returns (uint256) {
+        return counter._value;
+    }
+
+    function increment(Counter storage counter) internal {
+        unchecked {
+            counter._value += 1;
         }
-
-        require(currentOwner == msg.sender, "Car owner only");
-
-        owners[car] = newOwner;
     }
 
-    function getOwner(uint256 car) public view returns (address) {
-        return owners[car];
+    function decrement(Counter storage counter) internal {
+        uint256 value = counter._value;
+        require(value > 0, "Counter: decrement overflow");
+        unchecked {
+            counter._value = value - 1;
+        }
+    }
+
+    function reset(Counter storage counter) internal {
+        counter._value = 0;
     }
 }
